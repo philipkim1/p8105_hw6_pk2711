@@ -2,7 +2,10 @@
 title: "Homework 6"
 author: "Philip Kim"
 date: "11/29/2021"
-output: github_document
+output: 
+  github_document:
+    toc: true
+    toc_depth: 6
 ---
 
 ```{r setup, include=FALSE}
