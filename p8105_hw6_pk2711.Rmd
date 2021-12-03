@@ -10,6 +10,7 @@ library(tidyverse)
 library(viridis)
 library(modelr)
 library(purrr)
+library(knitr)
 
 knitr::opts_chunk$set(
   fig.width = 6,
@@ -47,7 +48,7 @@ sum(is.na(birthweight_df))
 
 In efforts to propose a regression model for birthweight, I hypothesized that the biological features of the mother, during the time of delivery, were the most important factors. As such, the variables of interest were `delwt`, `mheight`, `momage`, and `mrace`. 
 
-```{r}
+```{r, message = FALSE}
 model = lm(bwt ~ delwt + mheight + momage + mrace, data = birthweight_df)
 
 model %>% broom::tidy()
@@ -70,7 +71,7 @@ birthweight_df %>%
 ```{r}
 model2 = lm(bwt ~ blength + gaweeks, data = birthweight_df)
 
-model3 = lm(bwt ~ bhead * blength + bhead * babysex + blength * babysex + bhead * blength * babysex, data = birthweight_df)
+model3 = lm(bwt ~ bhead + blength + babysex + bhead * blength + bhead * babysex + blength * babysex + bhead * blength * babysex, data = birthweight_df)
 ```
 
 ### Cross-Validation
@@ -114,6 +115,8 @@ cv_df %>%
 # Problem 2
 
 ```{r, message = FALSE}
+set.seed(1)
+
 weather_df = 
   rnoaa::meteo_pull_monitors(
     c("USW00094728"),
@@ -125,5 +128,87 @@ weather_df =
     tmin = tmin / 10,
     tmax = tmax / 10) %>%
   select(name, id, everything())
+```
+
+## R_hat_squared
+
+```{r}
+r_hat_squared = 
+  weather_df %>% 
+  bootstrap(n = 5000, id = "strap_number") %>% 
+  mutate(
+    models = map(.x = strap, ~ lm(tmax ~ tmin, data = .x)),
+    results = map(models, broom::glance)
+  ) %>% 
+  select(strap_number, results) %>% 
+  unnest(results)
+```
+
+### Confidence Interval
+
+```{r}
+r_hat_squared %>% 
+  summarize(
+    lower = quantile(r.squared, 0.025),
+    upper = quantile(r.squared, 0.975)) %>% 
+  kable()
+```
+
+### Distribution Plot
+
+```{r}
+r_hat_squared %>% 
+  ggplot(aes(x = r.squared)) + 
+  geom_density() +
+  labs(
+    x = "R hat squared",
+    y = "Density",
+    title = "Distribution of R hat squared estimated values") +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+## Log(b0 * b1)
+
+```{r}
+log_b0_b1 = 
+  weather_df %>% 
+  bootstrap(n = 5000, id = "strap_number") %>% 
+  mutate(
+    models = map(.x = strap, ~ lm(tmax ~ tmin, data = .x)),
+    results = map(models, broom::tidy)
+  ) %>% 
+  select(strap_number, results) %>% 
+  unnest(results) %>% 
+  select(strap_number:estimate) %>% 
+  pivot_wider(
+    names_from = "term",
+    values_from = "estimate") %>% 
+  janitor::clean_names() %>% 
+  mutate(
+    new_log = log(intercept * tmin)
+    )
+```
+
+### Confidence Interval
+
+```{r}
+log_b0_b1 %>% 
+  summarize(
+    lower = quantile(new_log, 0.025),
+    upper = quantile(new_log, 0.975)) %>% 
+  kable()
+```
+
+### Distribution Plot
+
+```{r}
+log_b0_b1 %>% 
+  ggplot(aes(x = new_log)) + 
+  geom_density() +
+  labs(
+    x = "log(b0 * b1)",
+    y = "Density",
+    title = "Distribution of log(b0 *b1) estimated values") +
+  theme(plot.title = element_text(hjust = 0.5))
 ```
 
