@@ -49,7 +49,7 @@ sum(is.na(birthweight_df))
 
 ## Regression Model
 
-In efforts to propose a regression model for birthweight, I hypothesized that the biological features of the mother, during the time of delivery, were the most important factors. As such, the variables of interest were `delwt`, `mheight`, `momage`, and `mrace`. 
+In efforts to propose a regression model for birthweight, I hypothesized that the biological features of the mother, during the time of delivery, were the most important factors in determing the birthweight of the baby. As such, the variables of interest were `delwt`, `mheight`, `momage`, and `mrace`. 
 
 ```{r, message = FALSE}
 model = lm(bwt ~ delwt + mheight + momage + mrace, data = birthweight_df)
@@ -110,9 +110,11 @@ cv_df %>%
   labs(
     x = "Model",
     y = "RMSE",
-    title = "RMSE for 3 Models") +
+    title = "RMSE Distribution for 3 Models") +
   theme(plot.title = element_text(hjust = 0.5))
 ```
+
+It seems that our proposed model was the worst model as it had the largest mean RMSE whereas the best model was the one with the interactions included (smallest RMSE). 
 
 
 # Problem 2
@@ -170,6 +172,8 @@ r_hat_squared %>%
   theme(plot.title = element_text(hjust = 0.5))
 ```
 
+The distribution of the estimates for the r hat squared values seems to be normally distributed with a slightly larger tail on the left side.
+
 ## Log(b0 * b1)
 
 ```{r}
@@ -215,3 +219,4 @@ log_b0_b1 %>%
   theme(plot.title = element_text(hjust = 0.5))
 ```
 
+The distribution of the estimates for the log values of b0 and b1 seems to be normally distributed, similar to the r hat squared estimates plot. It is slightly more symmetric than the previous plot but it does seem to have a bit of larger tail on the lower values as well.
